@@ -22,7 +22,7 @@ void printWordGraph(wordFrequency_t*);
 void printLetterGraph(letterFrequency_t*);
 
 int main(int argc, char* argv[]){
-	char* allString =NULL;	
+	char *allString =NULL,frequentWords[1000],frequentLetters[500];	
 	FILE* fp=NULL;
 	wordFrequency_t* wordFrequency = (wordFrequency_t*)malloc(sizeof(wordFrequency_t)*10);
 	letterFrequency_t* letterFrequency = (letterFrequency_t*)malloc(sizeof(letterFrequency_t)*10);
@@ -31,8 +31,14 @@ int main(int argc, char* argv[]){
 
 	allString = (char*)malloc(fileSize(fp));
 	allString = preProcessor(allString);
+	for(int i=0;i<10;i++){
+		wordFrequency[i]=countWord(allString,frequentWords[i]);
+	}
+
+	for(int i=0;i<10;i++){
+		letterFrequency[i]=countWord(allString,frequentLetters[i]);
+	}
 	
-	wordFrequency[i]=
 	printWordGraph(wordFrequency);
 	printLetterGraph(letterFrequency);
 
