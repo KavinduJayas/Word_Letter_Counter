@@ -17,10 +17,10 @@ FILE* readFile(char*);
 float countLetter(char);
 float countWord(char*);
 void printWordGraph(wordFrequency_t*);
-void printWordGraph(letterFrequency_t*);
+void printLetterGraph(letterFrequency_t*);
 
-int main(){
-
+int main(int argc, char* argv[]){
+	
 
 	return 0;
 }
