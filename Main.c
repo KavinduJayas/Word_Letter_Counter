@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
 	}
 
 	for(int i=0;i<10;i++){
-		letterFrequency[i]=countWord(allString,frequentLetters[i]);
+		letterFrequency[i]=countLetter(allString,frequentLetters[i]);
 	}
 	
 	printWordGraph(wordFrequency);
