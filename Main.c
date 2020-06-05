@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdlib.h>
 
 typedef struct _{
@@ -21,18 +22,18 @@ typedef struct ___{
 
 int printUsage(char*);
 int fileSize(FILE*);
-char* preProcessor(char*);
-letterFrequency_t countLetter(char*,char);
-wordFrequency_t countWord(char*,char*);
+letterFrequency_t countLetter(int ,letterFrequency_t* ,file_t*);
+wordFrequency_t countWord(int ,wordFrequency_t* ,file_t*);
+void sortWord(wordFrequency_t*);
+void sortLetter(letterFrequency_t*);
 void printWordGraph(wordFrequency_t*);
 void printLetterGraph(letterFrequency_t*);
 
 int main(int argc, char* argv[]){
-	char *allString =NULL,*words,*letters;	
-	int scaled=0,word=1,length=10,lengthFlag=1,totalFileSize=0;
+	int scaled=0,wordMode=1,length=10,lengthFlag=1,totalFileSize=0;
 	file_t* files=NULL;
-	wordFrequency_t* wordFrequency = (wordFrequency_t*)malloc(sizeof(wordFrequency_t)*10);
-	letterFrequency_t* letterFrequency = (letterFrequency_t*)malloc(sizeof(letterFrequency_t)*10);
+	wordFrequency_t* wordFrequency=NULL;
+	letterFrequency_t* letterFrequency=NULL;
 
     int indicater=1;
     for (indicater = 1; indicater < argc && argv[indicater][0] == '-'; indicater++) {
@@ -44,9 +45,9 @@ int main(int argc, char* argv[]){
 					return printUsage(argv[0]);
 				}
 				break;
-			case 'c':word=0;break;
+			case 'c':wordMode=0;break;
 			case 'w':
-				if(word=0){
+				if(wordMode=0){
 					return printUsage(argv[0]);
 				}
 				break;
@@ -87,28 +88,23 @@ int main(int argc, char* argv[]){
 		return printUsage(argv[0]);
 	}
 
-	for(int i=indicater;argv[indicater]!=NULL;i++){
+	for(int i=indicater;argv[indicater]!=NULL;i++){//openning pointers to the files and recording the collective  file size
 			file_t* newFile=(file_t*)malloc(sizeof(file_t));
 			newFile->filePointer=fopen(argv[indicater],'r');
 			newFile->next=files;
 			files=newFile;
 			totalFileSize+=fileSize(newFile);
+			
 	}
-	if(word){
-		allString = (char*)malloc(fileSize(totalFileSize));
 
-		allString = preProcessor(allString);
-		for(int i=0;i<10;i++){
-			wordFrequency[i]=countWord(allString,frequentWords[i]);
-		}
+	if(wordMode){
+		countWord(totalFileSize,wordFrequency,files);
+		sortWord(wordFrequency);
+	}else{
+		countLetter(totalFileSize,letterFrequency,files);
+		sortLetter(letterFrequency);
 	}
 	
-	
-	
-
-	for(int i=0;i<10;i++){
-		letterFrequency[i]=countLetter(allString,frequentLetters[i]);
-	}
 	
 	printWordGraph(wordFrequency);
 	printLetterGraph(letterFrequency);
@@ -124,5 +120,19 @@ int printUsage(char* fileName){
 
 int fileSize(FILE* fp){
 	fseek(fp, 0, SEEK_END);
-	return ftell(fp);    
+	return ftell(fp);
+	fseek(fp, 0, SEEK_SET);    
+}
+
+wordFrequency_t countWord(int totalFileSize,wordFrequency_t* wordFrequency,file_t* files){
+	char c;
+	wordFrequency=(wordFrequency_t*)malloc(totalFileSize);
+	for(file_t* current=files;current->next!=NULL;current=current->next){
+		while ((c=fgetc(current->filePointer))!=EOF){
+			if(isalnum(c) || c==' '){//pre-processing
+				
+			}
+		}
+		
+	}
 }
