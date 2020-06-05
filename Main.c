@@ -4,14 +4,16 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#define DEFAULT_LENGTH 10
+
 typedef struct _{
 	char word[50];
-	float frequency;
+	int frequency;
 }wordFrequency_t;
 
 typedef struct __{
 	char letter;
-	float frequency;
+	int frequency;
 }letterFrequency_t;
 
 typedef struct ___{
@@ -19,24 +21,29 @@ typedef struct ___{
 	struct ___ *next;
 }file_t;
 
-
+int compareChar(const void*,const void*);
+int compareWord(const void*,const void*);
 int printUsage(char*);
 int fileSize(FILE*);
-letterFrequency_t countLetter(int ,letterFrequency_t* ,file_t*);
-wordFrequency_t countWord(int ,wordFrequency_t* ,file_t*);
+void countLetter(int*,letterFrequency_t* ,file_t*);
+void countWord(int*,wordFrequency_t* ,file_t*);
 void sortWord(wordFrequency_t*);
-void sortLetter(letterFrequency_t*);
+//void sortLetter(letterFrequency_t*);
+
 void printWordGraph(wordFrequency_t*);
 void printLetterGraph(letterFrequency_t*);
 
 int main(int argc, char* argv[]){
-	int scaled=0,wordMode=1,length=10,lengthFlag=1,totalFileSize=0;
+	int scaled=0,wordMode=1,length=DEFAULT_LENGTH,lengthFlag=1,totalFileSize=0;
+	size_t *count =(int*)malloc(sizeof(int));
 	file_t* files=NULL;
-	wordFrequency_t* wordFrequency=NULL;
-	letterFrequency_t* letterFrequency=NULL;
+	wordFrequency_t* wordArray=NULL;
+	letterFrequency_t* letterArray=NULL;
+
+	*count=0;
 
     int indicater=1;
-    for (indicater = 1; indicater < argc && argv[indicater][0] == '-'; indicater++) {
+    for(indicater = 1; indicater < argc && argv[indicater][0] == '-'; indicater++) {
         switch (argv[indicater][1]) {
 			case '-': 
 				if(strcmp(argv[indicater],"--scaled")==0){
@@ -88,6 +95,8 @@ int main(int argc, char* argv[]){
 		return printUsage(argv[0]);
 	}
 
+
+
 	for(int i=indicater;argv[indicater]!=NULL;i++){//openning pointers to the files and recording the collective  file size
 			file_t* newFile=(file_t*)malloc(sizeof(file_t));
 			newFile->filePointer=fopen(argv[indicater],'r');
@@ -98,18 +107,44 @@ int main(int argc, char* argv[]){
 	}
 
 	if(wordMode){
-		countWord(totalFileSize,wordFrequency,files);
-		sortWord(wordFrequency);
+		wordArray=(wordFrequency_t*)malloc(totalFileSize);
+		countWord(count,wordArray,files);
+		qsort(wordArray,count,sizeof(wordFrequency_t),compareWord);
+		//sortWord(wordArray);
 	}else{
-		countLetter(totalFileSize,letterFrequency,files);
-		sortLetter(letterFrequency);
+		letterArray=(letterFrequency_t*)malloc(totalFileSize);
+		countLetter(count,letterArray,files);
+		qsort(letterArray,count,sizeof(letterFrequency_t),compareChar);
+		
 	}
 	
 	
-	printWordGraph(wordFrequency);
-	printLetterGraph(letterFrequency);
+	printWordGraph(wordArray);
+	printLetterGraph(letterArray);
 
 	return 0;
+}
+
+int compareChar(const void* x,const void* y){
+	int l= ((letterFrequency_t*)x)->frequency;
+	int r= ((letterFrequency_t*)y)->frequency;
+
+	if(l==r){
+		return ((letterFrequency_t*)y)->letter-((letterFrequency_t*)x)->letter;
+	}else{
+		return r-l;
+	}
+}
+
+int compareWord(const void* x,const void* y){
+	int l= ((wordFrequency_t*)x)->frequency;
+	int r= ((wordFrequency_t*)y)->frequency;
+
+	if(l==r){
+		return strcmp(((wordFrequency_t*)y)->word,((wordFrequency_t*)x)->word);
+	}else{
+		return r-l;
+	}
 }
 
 int printUsage(char* fileName){
@@ -124,12 +159,36 @@ int fileSize(FILE* fp){
 	fseek(fp, 0, SEEK_SET);    
 }
 
-wordFrequency_t countWord(int totalFileSize,wordFrequency_t* wordFrequency,file_t* files){
-	char c;
-	wordFrequency=(wordFrequency_t*)malloc(totalFileSize);
-	for(file_t* current=files;current->next!=NULL;current=current->next){
-		while ((c=fgetc(current->filePointer))!=EOF){
+void countWord(int* count,wordFrequency_t* wordFrequency,file_t* files){
+	char c;	
+	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
+		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
 			if(isalnum(c) || c==' '){//pre-processing
+				
+			}
+		}
+		
+	}
+}
+
+void countLetter(int* count,letterFrequency_t* letterArray,file_t* files){
+	char c;	
+	int isInArray=0;
+	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
+		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
+			if(isalnum(c)){//pre-processing
+				for(int i=0;i<*count;i++){
+					if(letterArray[i].letter==c){//if the letter has already been entered 
+						letterArray[i].frequency+=1;
+						isInArray=1;
+					}
+					if(!isInArray){//new letter
+						letterArray[*count].letter=c;		
+						letterArray[*count].frequency=0;
+						*count++;				
+					}
+					isInArray=0;
+				}
 				
 			}
 		}
