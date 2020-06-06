@@ -5,9 +5,10 @@
 #include <stdlib.h>
 
 #define DEFAULT_LENGTH 10
+#define MAX_WORD_SIZE 50
 
 typedef struct _{
-	char word[50];
+	char word[MAX_WORD_SIZE];
 	int frequency;
 }wordFrequency_t;
 
@@ -28,8 +29,6 @@ int fileSize(FILE*);
 void countLetter(int*,letterFrequency_t* ,file_t*);
 void countWord(int*,wordFrequency_t* ,file_t*);
 void sortWord(wordFrequency_t*);
-//void sortLetter(letterFrequency_t*);
-
 void printWordGraph(wordFrequency_t*);
 void printLetterGraph(letterFrequency_t*);
 
@@ -110,7 +109,6 @@ int main(int argc, char* argv[]){
 		wordArray=(wordFrequency_t*)malloc(totalFileSize);
 		countWord(count,wordArray,files);
 		qsort(wordArray,count,sizeof(wordFrequency_t),compareWord);
-		//sortWord(wordArray);
 	}else{
 		letterArray=(letterFrequency_t*)malloc(totalFileSize);
 		countLetter(count,letterArray,files);
@@ -159,13 +157,30 @@ int fileSize(FILE* fp){
 	fseek(fp, 0, SEEK_SET);    
 }
 
-void countWord(int* count,wordFrequency_t* wordFrequency,file_t* files){
-	char c;	
+void countWord(int* count,wordFrequency_t* wordArray,file_t* files){
+	char c,*word=(char*)malloc(MAX_WORD_SIZE);	
+	int position=0,isInArray=0;
+	strcpy(*word,"");
+
 	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
 		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
-			if(isalnum(c) || c==' '){//pre-processing
-				
-			}
+			if(isalnum(c)){//pre-processing
+				word[position]=c;				
+			}else if(c==' ' && position){
+				for(int i=0;i<*count;i++){
+					if(strcmp(wordArray[*count].word,word)){
+						wordArray[*count].frequency++;
+						isInArray=1;
+					}
+				}
+				if(!isInArray){
+					strcpy(wordArray[*count].word,word);
+					*count++;
+				}	
+				isInArray=0;			
+				strcpy(*word,"");
+				position=0;
+			}			
 		}
 		
 	}
@@ -182,13 +197,13 @@ void countLetter(int* count,letterFrequency_t* letterArray,file_t* files){
 						letterArray[i].frequency+=1;
 						isInArray=1;
 					}
-					if(!isInArray){//new letter
-						letterArray[*count].letter=c;		
-						letterArray[*count].frequency=0;
-						*count++;				
-					}
-					isInArray=0;
 				}
+				if(!isInArray){//new letter
+					letterArray[*count].letter=c;		
+					letterArray[*count].frequency=0;
+					*count++;				
+				}
+				isInArray=0;			
 				
 			}
 		}
