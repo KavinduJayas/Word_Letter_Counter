@@ -29,8 +29,8 @@ int fileSize(FILE*);
 void countLetter(int*,letterFrequency_t* ,file_t*);
 void countWord(int*,wordFrequency_t* ,file_t*);
 void sortWord(wordFrequency_t*);
-void printWordGraph(wordFrequency_t*);
-void printLetterGraph(letterFrequency_t*);
+void printWordGraph(wordFrequency_t*,int,int);
+void printLetterGraph(letterFrequency_t*,int,int);
 
 int main(int argc, char* argv[]){
 	int scaled=0,wordMode=1,length=DEFAULT_LENGTH,lengthFlag=1,totalFileSize=0;
@@ -109,17 +109,14 @@ int main(int argc, char* argv[]){
 		wordArray=(wordFrequency_t*)malloc(totalFileSize);
 		countWord(count,wordArray,files);
 		qsort(wordArray,count,sizeof(wordFrequency_t),compareWord);
+		printWordGraph(wordArray,length,count);
 	}else{
 		letterArray=(letterFrequency_t*)malloc(totalFileSize);
 		countLetter(count,letterArray,files);
 		qsort(letterArray,count,sizeof(letterFrequency_t),compareChar);
+		printLetterGraph(letterArray,length,count);
 		
 	}
-	
-	
-	printWordGraph(wordArray);
-	printLetterGraph(letterArray);
-
 	return 0;
 }
 
@@ -208,5 +205,23 @@ void countLetter(int* count,letterFrequency_t* letterArray,file_t* files){
 			}
 		}
 		
+	}
+}
+
+void printWordGraph(wordFrequency_t *wordArray,int length,int count){
+	if(count<length){
+		length=count;
+	}
+	for(int i=0;i<length;i++){
+		printf("  Word = %s , Frequency = %s \n",wordArray[i].word,wordArray[i].frequency);
+	}
+}
+
+void printLetterGraph(letterFrequency_t *letterArray,int length,int count){
+	if(count<length){
+		length=count;
+	}
+	for(int i=0;i<length;i++){
+		printf("  Letter = %s , Frequency = %s \n",letterArray[i].letter,letterArray[i].frequency);
 	}
 }
