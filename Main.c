@@ -26,15 +26,16 @@ int compareChar(const void*,const void*);
 int compareWord(const void*,const void*);
 int printUsage(char*);
 int fileSize(FILE*);
-void countLetter(int*,letterFrequency_t* ,file_t*);
-void countWord(int*,wordFrequency_t* ,file_t*);
+void countLetter(size_t*,letterFrequency_t* ,file_t*);
+void countWord(size_t*,wordFrequency_t* ,file_t*);
 void sortWord(wordFrequency_t*);
-void printWordGraph(wordFrequency_t*,int,int);
-void printLetterGraph(letterFrequency_t*,int,int);
+void printWordGraph(wordFrequency_t*,long int,size_t*);
+void printLetterGraph(letterFrequency_t*,long int,size_t*);
 
 int main(int argc, char* argv[]){
-	int scaled=0,wordMode=1,length=DEFAULT_LENGTH,lengthFlag=1,totalFileSize=0;
-	size_t *count =(int*)malloc(sizeof(int));
+	int scaled=0,wordMode=1,lengthFlag=1,totalFileSize=0;
+	long int length=DEFAULT_LENGTH;
+	size_t *count =(size_t*)malloc(sizeof(long int));
 	file_t* files=NULL;
 	wordFrequency_t* wordArray=NULL;
 	letterFrequency_t* letterArray=NULL;
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]){
 
     int indicater=1;
     for(indicater = 1; indicater < argc && argv[indicater][0] == '-'; indicater++) {
+		printf("\nHandling Arguments\n");
         switch (argv[indicater][1]) {
 			case '-': 
 				if(strcmp(argv[indicater],"--scaled")==0){
@@ -53,18 +55,18 @@ int main(int argc, char* argv[]){
 				break;
 			case 'c':wordMode=0;break;
 			case 'w':
-				if(wordMode=0){
+				if(wordMode){
 					return printUsage(argv[0]);
 				}
 				break;
 			case 'l':
 				if(argv[indicater+1]!=NULL && lengthFlag){
-					if(strlen(argv[indicater+1]>2)){
+					if(strlen(argv[indicater+1])>2){
 						return printUsage(argv[0]);
 					}else if(strlen(argv[indicater+1])==2){
 						if(isdigit(argv[indicater+1][0]) && isdigit(argv[indicater+1][1])){
-							if(strtoi(argv[indicater+1]>=0 && strtoi(argv[indicater+1]<=10))){
-								length = strtoi(argv[indicater+1]);
+							if(atoi(argv[indicater+1])>=0 && atoi(argv[indicater+1])<=10){
+								length = atoi(argv[indicater+1]);
 								lengthFlag =0;
 							}else{
 								return printUsage(argv[0]);
@@ -73,8 +75,8 @@ int main(int argc, char* argv[]){
 							return printUsage(argv[0]);
 						}
 					}else if(isdigit(argv[indicater+1][0])){
-							if(strtoi(argv[indicater+1]>=0 && strtoi(argv[indicater+1]<=10))){
-								length = strtoi(argv[indicater+1]);
+							if(atoi(argv[indicater+1])>=0 && atoi(argv[indicater+1])<=10){
+								length = atoi(argv[indicater+1]);
 								lengthFlag=0;
 							}else{
 								return printUsage(argv[0]);
@@ -90,30 +92,38 @@ int main(int argc, char* argv[]){
         }   
     }   
 
-	if(argv[indicater]=NULL){//no files given 
+	if(argv[indicater]==NULL){//no files given 
 		return printUsage(argv[0]);
 	}
 
+	printf("\nArgument handling Done\n");
 
+	printf("\nWordMode=%i length=%li scaled=%i \n",wordMode,length,scaled);
 
 	for(int i=indicater;argv[indicater]!=NULL;i++){//openning pointers to the files and recording the collective  file size
 			file_t* newFile=(file_t*)malloc(sizeof(file_t));
-			newFile->filePointer=fopen(argv[indicater],'r');
+			newFile->filePointer=fopen(argv[indicater],"r");
 			newFile->next=files;
 			files=newFile;
-			totalFileSize+=fileSize(newFile);
-			
+			printf("\nfiles added \n");
+			totalFileSize+=fileSize(newFile->filePointer);
+			fseek(newFile->filePointer, 0, SEEK_SET);
+			printf("\nsize updated \n");
 	}
 
 	if(wordMode){
 		wordArray=(wordFrequency_t*)malloc(totalFileSize);
 		countWord(count,wordArray,files);
-		qsort(wordArray,count,sizeof(wordFrequency_t),compareWord);
+		printf("\nword insertion Done\n");
+		qsort(wordArray,*count,sizeof(wordFrequency_t),compareWord);
+		printf("\nwords sorted \n");
 		printWordGraph(wordArray,length,count);
 	}else{
 		letterArray=(letterFrequency_t*)malloc(totalFileSize);
 		countLetter(count,letterArray,files);
-		qsort(letterArray,count,sizeof(letterFrequency_t),compareChar);
+		printf("\nletter insertion Done\n");
+		qsort(letterArray,*count,sizeof(letterFrequency_t),compareChar);
+		printf("\nchars sorted \n");
 		printLetterGraph(letterArray,length,count);
 		
 	}
@@ -151,13 +161,13 @@ int printUsage(char* fileName){
 int fileSize(FILE* fp){
 	fseek(fp, 0, SEEK_END);
 	return ftell(fp);
-	fseek(fp, 0, SEEK_SET);    
+	    
 }
 
-void countWord(int* count,wordFrequency_t* wordArray,file_t* files){
+void countWord(size_t* count,wordFrequency_t* wordArray,file_t* files){
 	char c,*word=(char*)malloc(MAX_WORD_SIZE);	
 	int position=0,isInArray=0;
-	strcpy(*word,"");
+	strcpy(word,"");
 
 	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
 		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
@@ -172,10 +182,10 @@ void countWord(int* count,wordFrequency_t* wordArray,file_t* files){
 				}
 				if(!isInArray){
 					strcpy(wordArray[*count].word,word);
-					*count++;
+					(*count)++;
 				}	
 				isInArray=0;			
-				strcpy(*word,"");
+				strcpy(word,"");
 				position=0;
 			}			
 		}
@@ -183,7 +193,7 @@ void countWord(int* count,wordFrequency_t* wordArray,file_t* files){
 	}
 }
 
-void countLetter(int* count,letterFrequency_t* letterArray,file_t* files){
+void countLetter(size_t* count,letterFrequency_t* letterArray,file_t* files){
 	char c;	
 	int isInArray=0;
 	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
@@ -198,7 +208,7 @@ void countLetter(int* count,letterFrequency_t* letterArray,file_t* files){
 				if(!isInArray){//new letter
 					letterArray[*count].letter=c;		
 					letterArray[*count].frequency=0;
-					*count++;				
+					(*count)++;				
 				}
 				isInArray=0;			
 				
@@ -208,20 +218,20 @@ void countLetter(int* count,letterFrequency_t* letterArray,file_t* files){
 	}
 }
 
-void printWordGraph(wordFrequency_t *wordArray,int length,int count){
-	if(count<length){
-		length=count;
+void printWordGraph(wordFrequency_t *wordArray,long int length,size_t* count){
+	if(*count<length){
+		length=*count;
 	}
 	for(int i=0;i<length;i++){
-		printf("  Word = %s , Frequency = %s \n",wordArray[i].word,wordArray[i].frequency);
+		printf("  Word = %s , Frequency = %i \n",wordArray[i].word,wordArray[i].frequency);
 	}
 }
 
-void printLetterGraph(letterFrequency_t *letterArray,int length,int count){
-	if(count<length){
-		length=count;
+void printLetterGraph(letterFrequency_t *letterArray,long int length,size_t* count){
+	if(*count<length){
+		length=*count;
 	}
 	for(int i=0;i<length;i++){
-		printf("  Letter = %s , Frequency = %s \n",letterArray[i].letter,letterArray[i].frequency);
+		printf("  Letter = %c , Frequency = %i \n",letterArray[i].letter,letterArray[i].frequency);
 	}
 }
