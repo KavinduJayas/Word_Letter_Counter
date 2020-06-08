@@ -33,16 +33,14 @@ void printWordGraph(wordFrequency_t*,long int,size_t*);
 void printLetterGraph(letterFrequency_t*,long int,size_t*);
 
 int main(int argc, char* argv[]){
-	int scaled=0,wordMode=1,lengthFlag=1,totalFileSize=0;
+	int scaled=0,wordMode=1,lengthFlag=1,totalFileSize=0,indicater=1;
 	long int length=DEFAULT_LENGTH;
 	size_t *count =(size_t*)malloc(sizeof(long int));
+	*count=0;
 	file_t* files=NULL;
 	wordFrequency_t* wordArray=NULL;
-	letterFrequency_t* letterArray=NULL;
+	letterFrequency_t* letterArray=NULL;	
 
-	*count=0;
-
-    int indicater=1;
     for(indicater = 1; indicater < argc && argv[indicater][0] == '-'; indicater++) {
 		printf("\nHandling Arguments\n");
         switch (argv[indicater][1]) {
@@ -100,15 +98,17 @@ int main(int argc, char* argv[]){
 
 	printf("\nWordMode=%i length=%li scaled=%i \n",wordMode,length,scaled);
 
-	for(int i=indicater;argv[indicater]!=NULL;i++){//openning pointers to the files and recording the collective  file size
+	printf("\n%i %s\n",indicater,argv[indicater]);
+
+	for(int i=indicater;argv[i]!=NULL;i++){//openning pointers to the files and recording the collective  file size
 			file_t* newFile=(file_t*)malloc(sizeof(file_t));
-			newFile->filePointer=fopen(argv[indicater],"r");
+			newFile->filePointer=fopen(argv[i],"r");
 			newFile->next=files;
 			files=newFile;
-			printf("\nfiles added \n");
+			printf("\nfiles added at %x \n",files->filePointer);
 			totalFileSize+=fileSize(newFile->filePointer);
 			fseek(newFile->filePointer, 0, SEEK_SET);
-			printf("\nsize updated \n");
+			printf("\nTotal size = %i \n",totalFileSize);
 	}
 
 	if(wordMode){
@@ -116,8 +116,12 @@ int main(int argc, char* argv[]){
 		countWord(count,wordArray,files);
 		printf("\nword insertion Done\n");
 		qsort(wordArray,*count,sizeof(wordFrequency_t),compareWord);
-		printf("\nwords sorted \n");
+		printf("\nwords sorted\ncount=%lu \n",*count);
+		for(int i=0;i<*count;i++){
+		printf("  Word = %s , Frequency = %i \n",wordArray[i].word,wordArray[i].frequency);
+		}
 		printWordGraph(wordArray,length,count);
+		printf("\nGraph Printed\n");
 	}else{
 		letterArray=(letterFrequency_t*)malloc(totalFileSize);
 		countLetter(count,letterArray,files);
@@ -168,9 +172,12 @@ void countWord(size_t* count,wordFrequency_t* wordArray,file_t* files){
 	char c,*word=(char*)malloc(MAX_WORD_SIZE);	
 	int position=0,isInArray=0;
 	strcpy(word,"");
+	file_t* current = files;
 
-	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
+	for(;current->next!=NULL;current=current->next){//iterating through the file-array
 		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
+			//printf("\nfiles reading at %x \n",current->filePointer);
+			//printf("%c", c);
 			if(isalnum(c)){//pre-processing
 				word[position]=c;				
 			}else if(c==' ' && position){
@@ -180,6 +187,7 @@ void countWord(size_t* count,wordFrequency_t* wordArray,file_t* files){
 						isInArray=1;
 					}
 				}
+				printf("\nword=%s \n",word);
 				if(!isInArray){
 					strcpy(wordArray[*count].word,word);
 					(*count)++;
