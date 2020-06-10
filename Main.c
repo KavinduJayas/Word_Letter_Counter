@@ -117,18 +117,21 @@ int main(int argc, char* argv[]){
 		printf("\nword insertion Done\n");
 		qsort(wordArray,*count,sizeof(wordFrequency_t),compareWord);
 		printf("\nwords sorted\ncount=%lu \n",*count);
-		for(int i=0;i<*count;i++){
+		for(int i=0;i<length;i++){
 		printf("  Word = %s , Frequency = %i \n",wordArray[i].word,wordArray[i].frequency);
 		}
-		printWordGraph(wordArray,length,count);
+		//printWordGraph(wordArray,length,count);
 		printf("\nGraph Printed\n");
 	}else{
 		letterArray=(letterFrequency_t*)malloc(totalFileSize);
 		countLetter(count,letterArray,files);
 		printf("\nletter insertion Done\n");
 		qsort(letterArray,*count,sizeof(letterFrequency_t),compareChar);
+		for(int i=0;i<length;i++){
+		printf("  Word = %c , Frequency = %i \n",letterArray[i].letter,letterArray[i].frequency);
+		}
 		printf("\nchars sorted \n");
-		printLetterGraph(letterArray,length,count);
+		//printLetterGraph(letterArray,length,count);
 		
 	}
 	return 0;
@@ -174,37 +177,50 @@ void countWord(size_t* count,wordFrequency_t* wordArray,file_t* files){
 	strcpy(word,"");
 	file_t* current = files;
 
-	for(;current->next!=NULL;current=current->next){//iterating through the file-array
+	for(;current!=NULL;current=current->next){//iterating through the file-array
 		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
 			//printf("\nfiles reading at %x \n",current->filePointer);
 			//printf("%c", c);
 			if(isalnum(c)){//pre-processing
-				word[position]=c;				
+				//printf("%c", c);
+				word[position]=c;	
+				position++;
+				//printf("\n\n\n\nword=%s \n",word);			
 			}else if(c==' ' && position){
+				//printf("New Word");
 				for(int i=0;i<*count;i++){
-					if(strcmp(wordArray[*count].word,word)){
-						wordArray[*count].frequency++;
+					if(!strcmp(wordArray[i].word,word)){
+						//printf("\n%i    wordArray[*count].frequency\n",wordArray[i].frequency);
+						(wordArray[i].frequency)++;
+						//printf("\n%i    wordArray[*count].frequency\n",wordArray[i].frequency);
 						isInArray=1;
 					}
 				}
-				printf("\nword=%s \n",word);
+				//printf("\nword=%s \n",word);
 				if(!isInArray){
 					strcpy(wordArray[*count].word,word);
+
+					//printf("Increasing count");
 					(*count)++;
 				}	
-				isInArray=0;			
-				strcpy(word,"");
+				isInArray=0;
+							
+				for(int j=0;word[j]!='\0';j++){
+					word[j]='\0';
+				}
+				//printf("\nword=%s \n",word);
 				position=0;
 			}			
 		}
 		
 	}
+	free(word);
 }
 
 void countLetter(size_t* count,letterFrequency_t* letterArray,file_t* files){
 	char c;	
 	int isInArray=0;
-	for(file_t* current=files;current->next!=NULL;current=current->next){//iterating through the file-array
+	for(file_t* current=files;current!=NULL;current=current->next){//iterating through the file-array
 		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
 			if(isalnum(c)){//pre-processing
 				for(int i=0;i<*count;i++){
