@@ -22,7 +22,7 @@ int* countLetter(size_t*,unsigned int* ,file_t*);
 void countWord(size_t*,size_t*,word_t** ,file_t*);
 word_t* sortWordArray(word_t**,int,size_t*);
 unsigned int* sortLetterArray(unsigned int*,int,size_t*,int*);
-void printWordGraph(word_t**,int,size_t*);
+void printWordGraph(word_t*,int,size_t*);
 void printLetterGraph(unsigned int*,int,size_t*);
 
 int main(int argc, char* argv[]){
@@ -98,20 +98,16 @@ int main(int argc, char* argv[]){
 	}
 
 	if(wordMode){
-		word_t* maxArray=NULL;
 		countWord(&count,&countAll,&wordArray,files);
 		printf("\ncount =%zu\n",count);
-		printf("\nword insertion Done\n");
-		maxArray=sortWordArray(&wordArray,length,&count);
-		printWordGraph(&maxArray,length,&count);	
+		printf("\nword insertion Done\n");		
+		printWordGraph(sortWordArray(&wordArray,length,&count),length,&count);	
 		printf("\nGraph Printed\n");
-	}else{	
-		unsigned int* maxArray=NULL;	
+	}else{		
 		foundOrder=countLetter(&countAll,letterArray,files);
 		printf("\nletter insertion Done\n");	
 		printf("\nchars sorted \n");
-		sortLetterArray(letterArray,length,&countAll,foundOrder);
-		printLetterGraph(maxArray,length,&countAll);		
+		printLetterGraph(sortLetterArray(letterArray,length,&countAll,foundOrder),length,&countAll);		
 	}
 	return 0;
 }
@@ -204,6 +200,7 @@ word_t* sortWordArray(word_t** wordArray,int length,size_t* count){
 	word_t* maxArray=(word_t*)malloc(sizeof(word_t)*length);
 	word_t* max=NULL;
 	word_t* maxPrev=NULL;
+
 	for(int i=0;i<length;i++){
 		max=*wordArray;
 		maxPrev=NULL;
@@ -260,14 +257,12 @@ unsigned int* sortLetterArray(unsigned int* letterArray,int length,size_t* count
 }
 
 
-void printWordGraph(word_t** maxArray,int length,size_t* count){
+void printWordGraph(word_t* maxArray,int length,size_t* count){
 	if(*count<length){
 		length=*count;
 	}
-	word_t* current = *maxArray;
 	for(int i=0;i<length;i++){
-		printf("  Word = %s , occurrence = %i \n",current->word,current->occurrence);
-		current=current->next;
+		printf("  Word = %s , occurrence = %i \n",maxArray[i].word,maxArray[i].occurrence);
 	}
 }
 
