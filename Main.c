@@ -1,51 +1,50 @@
 #include <stdio.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 
 #define DEFAULT_LENGTH 10
-#define MAX_WORD_SIZE 50
+#define MAX_WORD_SIZE 100
 
 typedef struct _{
 	char word[MAX_WORD_SIZE];
-	int frequency;
-}wordFrequency_t;
+	unsigned long int occurrence;
+	struct _ *next;
+}word_t;
 
 typedef struct __{
 	char letter;
-	int frequency;
-}letterFrequency_t;
+	unsigned long int occurrence;
+}char_t;
 
 typedef struct ___{
 	FILE* filePointer;
 	struct ___ *next;
 }file_t;
 
-int compareChar(const void*,const void*);
-int compareWord(const void*,const void*);
 int printUsage(char*);
-int fileSize(FILE*);
-void countLetter(size_t*,letterFrequency_t* ,file_t*);
-void countWord(size_t*,wordFrequency_t* ,file_t*);
-void sortWord(wordFrequency_t*);
-void printWordGraph(wordFrequency_t*,long int,size_t*);
-void printLetterGraph(letterFrequency_t*,long int,size_t*);
+int* countLetter(size_t*,double*,unsigned int* ,file_t*);
+void countWord(size_t*,double*,word_t** ,file_t*);
+word_t* sortWordArray(word_t**,int,size_t*);
+char_t* sortLetterArray(unsigned int*,int,double*,int*);
+void printGraph(void*,int,size_t*,double*,int);
+
 
 int main(int argc, char* argv[]){
-	int scaled=0,wordMode=1,lengthFlag=1,totalFileSize=0,indicater=1;
-	long int length=DEFAULT_LENGTH;
-	size_t *count =(size_t*)malloc(sizeof(long int));
-	*count=0;
+	unsigned int letterArray[36]={0};
+	int *foundOrder=NULL;
+	int scaled=0,wordMode=1,lengthFlag=1,indicater=1;
+	int length=DEFAULT_LENGTH;
+	size_t count=0;
+	double countAll=0;
 	file_t* files=NULL;
-	wordFrequency_t* wordArray=NULL;
-	letterFrequency_t* letterArray=NULL;	
+	word_t* wordArray=NULL;
+	
 
-    for(indicater = 1; indicater < argc && argv[indicater][0] == '-'; indicater++) {
-		printf("\nHandling Arguments\n");
+    for(; indicater < argc && argv[indicater][0] == '-'; indicater++) {
         switch (argv[indicater][1]) {
 			case '-': 
-				if(strcmp(argv[indicater],"--scaled")==0){
+				if(!strcmp(argv[indicater],"--scaled")){
 					scaled=1;
 				}else{
 					return printUsage(argv[0]);
@@ -53,29 +52,24 @@ int main(int argc, char* argv[]){
 				break;
 			case 'c':wordMode=0;break;
 			case 'w':
-				if(wordMode){
+				if(!wordMode){
 					return printUsage(argv[0]);
 				}
 				break;
 			case 'l':
 				if(argv[indicater+1]!=NULL && lengthFlag){
-					if(strlen(argv[indicater+1])>2){
+					if(strlen(argv[indicater+1])>2){						
 						return printUsage(argv[0]);
-					}else if(strlen(argv[indicater+1])==2){
-						if(isdigit(argv[indicater+1][0]) && isdigit(argv[indicater+1][1])){
-							if(atoi(argv[indicater+1])>=0 && atoi(argv[indicater+1])<=10){
-								length = atoi(argv[indicater+1]);
-								lengthFlag =0;
-							}else{
-								return printUsage(argv[0]);
-							}
-						}else{
+					}else if(strlen(argv[indicater+1])==2){			
+						if(strcmp(argv[indicater+1],"10")){
 							return printUsage(argv[0]);
 						}
-					}else if(isdigit(argv[indicater+1][0])){
-							if(atoi(argv[indicater+1])>=0 && atoi(argv[indicater+1])<=10){
-								length = atoi(argv[indicater+1]);
-								lengthFlag=0;
+						indicater++;
+					}else if(isdigit(argv[indicater+1][0])){						
+							if((argv[indicater+1][0]-'0')>0 && (argv[indicater+1][0]-'0')<10){								
+								length = (long int)(argv[indicater+1][0]-'0');						
+								lengthFlag=0;								
+								indicater++;								
 							}else{
 								return printUsage(argv[0]);
 							}
@@ -85,78 +79,117 @@ int main(int argc, char* argv[]){
 				}else{
 					return printUsage(argv[0]);
 				}
+				break;
 			default:
 				return printUsage(argv[0]);
         }   
     }   
-
+	
 	if(argv[indicater]==NULL){//no files given 
 		return printUsage(argv[0]);
 	}
 
-	printf("\nArgument handling Done\n");
+	//printf("\nWordMode=%i length=%i scaled=%i \n",wordMode,length,scaled);
 
-	printf("\nWordMode=%i length=%li scaled=%i \n",wordMode,length,scaled);
-
-	printf("\n%i %s\n",indicater,argv[indicater]);
-
-	for(int i=indicater;argv[i]!=NULL;i++){//openning pointers to the files and recording the collective  file size
+	for(int i=indicater;argv[i]!=NULL;i++){//openning pointers to the files
 			file_t* newFile=(file_t*)malloc(sizeof(file_t));
 			newFile->filePointer=fopen(argv[i],"r");
+			if(newFile->filePointer==NULL){
+				return printUsage(argv[0]);
+			}
 			newFile->next=files;
 			files=newFile;
-			printf("\nfiles added at %x \n",files->filePointer);
-			totalFileSize+=fileSize(newFile->filePointer);
-			fseek(newFile->filePointer, 0, SEEK_SET);
-			printf("\nTotal size = %i \n",totalFileSize);
+			//printf("\nfiles added at %p \n",files->filePointer);
 	}
 
 	if(wordMode){
-		wordArray=(wordFrequency_t*)malloc(totalFileSize);
-		countWord(count,wordArray,files);
-		printf("\nword insertion Done\n");
-		qsort(wordArray,*count,sizeof(wordFrequency_t),compareWord);
-		printf("\nwords sorted\ncount=%lu \n",*count);
-		for(int i=0;i<length;i++){
-		printf("  Word = %s , Frequency = %i \n",wordArray[i].word,wordArray[i].frequency);
-		}
-		//printWordGraph(wordArray,length,count);
-		printf("\nGraph Printed\n");
-	}else{
-		letterArray=(letterFrequency_t*)malloc(totalFileSize);
-		countLetter(count,letterArray,files);
-		printf("\nletter insertion Done\n");
-		qsort(letterArray,*count,sizeof(letterFrequency_t),compareChar);
-		for(int i=0;i<length;i++){
-		printf("  Word = %c , Frequency = %i \n",letterArray[i].letter,letterArray[i].frequency);
-		}
-		printf("\nchars sorted \n");
-		//printLetterGraph(letterArray,length,count);
-		
+		countWord(&count,&countAll,&wordArray,files);
+		//printf("\ncount =%zu\n",count);
+		//printf("\nword insertion Done\n");		
+		printGraph(sortWordArray((void*)&wordArray,length,&count),length,&count,&countAll,wordMode);	
+		//printf("\nGraph Printed\n");
+	}else{		
+		foundOrder=countLetter(&count,&countAll,letterArray,files);
+		//printf("\nletter insertion Done\n");	
+		//printf("\nchars sorted \n");
+		printGraph((void*)sortLetterArray(letterArray,length,&countAll,foundOrder),length,&count,&countAll,wordMode);		
 	}
 	return 0;
 }
 
-int compareChar(const void* x,const void* y){
-	int l= ((letterFrequency_t*)x)->frequency;
-	int r= ((letterFrequency_t*)y)->frequency;
+void countWord(size_t* count,double* countAll,word_t** wordArray,file_t* files){
+	
+	char c,*word=(char*)malloc(MAX_WORD_SIZE);	
+	int position=0,inArray = 0;
+	strcpy(word,"");
 
-	if(l==r){
-		return ((letterFrequency_t*)y)->letter-((letterFrequency_t*)x)->letter;
-	}else{
-		return r-l;
+	for(file_t* current = files;current!=NULL;current=current->next){//iterating through the file-array
+		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file			
+			c=tolower(c);
+			if(isalnum(c)){//pre-processing	
+				word[position]=c;	
+				position++;
+						
+			}else if(c==' ' && position ){		
+				if(wordArray!=NULL){
+					for(word_t* temp=*wordArray; temp!=NULL;temp=temp->next){
+						if(!(strcmp(temp->word,word))){				        
+							(temp->occurrence)++;	
+							inArray=1;
+						}
+					}
+				}
+				
+				if(!(inArray)){
+					word_t* newWord=(word_t*)malloc(sizeof(word_t));
+					strcpy(newWord->word,word);
+					newWord->occurrence=1;					
+					newWord->next=*wordArray;
+					*wordArray = newWord;
+					(*count)++;
+				}	
+				inArray=0;
+							
+				for(int j=0;word[j]!='\0';j++){
+					word[j]='\0';
+				}
+				position=0;
+				(*countAll)++;
+			}			
+		}
+		
 	}
+	
 }
 
-int compareWord(const void* x,const void* y){
-	int l= ((wordFrequency_t*)x)->frequency;
-	int r= ((wordFrequency_t*)y)->frequency;
+int* countLetter(size_t* count,double* countAll,unsigned int* letterArray,file_t* files){
 
-	if(l==r){
-		return strcmp(((wordFrequency_t*)y)->word,((wordFrequency_t*)x)->word);
-	}else{
-		return r-l;
+	char c;		
+	static int foundOrder[36]={0}; 
+
+	for(file_t* current=files;current!=NULL;current=current->next){//iterating through the file-array
+		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
+			if(isalnum(c)){//pre-processing
+				if(isdigit(c)){
+					if(letterArray[c-'0'+26]==0){
+						foundOrder[c-'0'+26]=*count;
+						(*count)++;
+					}
+					letterArray[c-'0'+26]++;
+				}else{
+					c=tolower(c);
+					if(letterArray[c-'a']==0){
+						foundOrder[c-'a']=*count;
+						(*count)++;
+					}
+					letterArray[c-'a']++;
+				}				
+				(*countAll)++;
+			}
+		}
+		
 	}
+	return foundOrder;
 }
 
 int printUsage(char* fileName){
@@ -164,98 +197,191 @@ int printUsage(char* fileName){
 	return 0;
 }
 
-
-int fileSize(FILE* fp){
-	fseek(fp, 0, SEEK_END);
-	return ftell(fp);
-	    
-}
-
-void countWord(size_t* count,wordFrequency_t* wordArray,file_t* files){
-	char c,*word=(char*)malloc(MAX_WORD_SIZE);	
-	int position=0,isInArray=0;
-	strcpy(word,"");
-	file_t* current = files;
-
-	for(;current!=NULL;current=current->next){//iterating through the file-array
-		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
-			//printf("\nfiles reading at %x \n",current->filePointer);
-			//printf("%c", c);
-			if(isalnum(c)){//pre-processing
-				//printf("%c", c);
-				word[position]=c;	
-				position++;
-				//printf("\n\n\n\nword=%s \n",word);			
-			}else if(c==' ' && position){
-				//printf("New Word");
-				for(int i=0;i<*count;i++){
-					if(!strcmp(wordArray[i].word,word)){
-						//printf("\n%i    wordArray[*count].frequency\n",wordArray[i].frequency);
-						(wordArray[i].frequency)++;
-						//printf("\n%i    wordArray[*count].frequency\n",wordArray[i].frequency);
-						isInArray=1;
-					}
-				}
-				//printf("\nword=%s \n",word);
-				if(!isInArray){
-					strcpy(wordArray[*count].word,word);
-
-					//printf("Increasing count");
-					(*count)++;
-				}	
-				isInArray=0;
-							
-				for(int j=0;word[j]!='\0';j++){
-					word[j]='\0';
-				}
-				//printf("\nword=%s \n",word);
-				position=0;
-			}			
-		}
-		
+word_t* sortWordArray(word_t** wordArray,int length,size_t* count){
+	if(*count<length){
+		length=*count;
 	}
-	free(word);
+	word_t* maxArray=(word_t*)malloc(sizeof(word_t)*length);
+	word_t* max=NULL;
+	word_t* maxPrev=NULL;
+
+	for(int i=0;i<length;i++){
+		max=*wordArray;
+		maxPrev=NULL;
+		for(word_t* current=*wordArray;current->next!=NULL;current=current->next){
+			if(current->next->occurrence >= max->occurrence){
+				max=current->next;		
+				maxPrev=current;				
+			}
+
+		}
+		if(maxPrev!=NULL){
+			maxPrev->next=max->next;
+		}
+
+		maxArray[i].occurrence=max->occurrence;
+		strcpy(maxArray[i].word,max->word);
+		maxArray[i].next=NULL;
+
+		if(max==*wordArray){
+			*wordArray=(*wordArray)->next;
+		}
+		free(max);
+
+	}	
+	return maxArray;
 }
 
-void countLetter(size_t* count,letterFrequency_t* letterArray,file_t* files){
-	char c;	
-	int isInArray=0;
-	for(file_t* current=files;current!=NULL;current=current->next){//iterating through the file-array
-		while((c=fgetc(current->filePointer))!=EOF){//iterating through a file
-			if(isalnum(c)){//pre-processing
-				for(int i=0;i<*count;i++){
-					if(letterArray[i].letter==c){//if the letter has already been entered 
-						letterArray[i].frequency+=1;
-						isInArray=1;
-					}
+char_t* sortLetterArray(unsigned int* letterArray,int length,double* countAll,int* foundOrder){
+
+	int max=0;
+	
+	if(*countAll<length){
+		length=*countAll;
+	}
+
+	char_t* maxArray=(char_t*)malloc(sizeof(char_t)*length);
+
+	for(int i=0;i<length;i++){
+		for(int j=0;j<36;j++){
+			if(letterArray[max]<letterArray[j]){
+				max = j;
+			}
+			if(letterArray[max] == letterArray[j]){
+				if(foundOrder[max]>foundOrder[j]){
+					max=j;
 				}
-				if(!isInArray){//new letter
-					letterArray[*count].letter=c;		
-					letterArray[*count].frequency=0;
-					(*count)++;				
-				}
-				isInArray=0;			
-				
 			}
 		}
+		if(max>25){
+			maxArray[i].letter=max+'0'-26;
+		}else{
+			maxArray[i].letter=max+'a';
+		}
+		maxArray[i].occurrence=letterArray[max];
+		letterArray[max]=0;
+		max=0;
+
 		
 	}
+	return maxArray;
 }
 
-void printWordGraph(wordFrequency_t *wordArray,long int length,size_t* count){
+
+void printGraph(void* voidMaxArray,int length,size_t* count,double* countAll,int wordMode){
+	double frequency;
 	if(*count<length){
 		length=*count;
 	}
-	for(int i=0;i<length;i++){
-		printf("  Word = %s , Frequency = %i \n",wordArray[i].word,wordArray[i].frequency);
+	unsigned long int maxWordLength=1;
+
+	if(wordMode){
+		word_t* maxArray=(word_t*)voidMaxArray;
+		for(int i=0;i<length;i++){
+			if(strlen(maxArray[i].word)>maxWordLength){
+				maxWordLength=strlen(maxArray[i].word);
+			}
+		}
+	}else{
+		char_t* maxArray=(char_t*)voidMaxArray;
 	}
+	printf("\n");
+	for(int i=0;i<length;i++){
+		frequency=(double)(maxArray[i].occurrence)/(*countAll);
+		
+			/*             ONE WORD            */
+
+		
+		for(int j=0;j<(maxWordLength+2);j++){
+			printf(" ");
+		}
+		printf("\u2502");
+		for(int j=0;j<(int)(frequency*(72-maxWordLength));j++){
+			printf("\u2591");
+		}
+
+		printf("\n");
+		if(wordMode){
+			printf(" %s",maxArray[i].word);
+			for(int j=0;j<(maxWordLength-strlen(maxArray[i].word)+1);j++){
+			printf(" ");
+		}
+		}else{
+			printf(" %c ",maxArray[i].letter);
+		}
+		
+		printf("\u2502");
+		for(int j=0;j<(int)(frequency*(72-maxWordLength));j++){
+			printf("\u2591");
+		}
+		printf("%.2f%%",frequency*100);
+		printf("\n");
+
+
+
+		for(int j=0;j<(maxWordLength+2);j++){
+			printf(" ");
+		}
+		printf("\u2502");
+		for(int j=0;j<(int)(frequency*(72-maxWordLength));j++){
+			printf("\u2591");
+		}
+		printf("\n");	
+		for(int j=0;j<(maxWordLength+2);j++){
+			printf(" ");
+		}
+		printf("\u2502\n");
+
+	}
+
+
+	/*      DEFAULT LINE        */
+
+	for(int i=0;i<(maxWordLength+2);i++){
+		printf(" ");
+	}	
+	printf("\u2514");
+
+	for(int i=0;i<(77-maxWordLength);i++){
+		printf("\u2500");
+	}
+	printf("\n");
+
 }
 
-void printLetterGraph(letterFrequency_t *letterArray,long int length,size_t* count){
-	if(*count<length){
-		length=*count;
-	}
-	for(int i=0;i<length;i++){
-		printf("  Letter = %c , Frequency = %i \n",letterArray[i].letter,letterArray[i].frequency);
-	}
-}
+/*
+
+WordMode=1 length=10 scaled=0 
+
+files added at 0x55b8057b6690 
+
+count =99007
+
+word insertion Done
+  Word = the , occurrence = 65661 
+  Word = of , occurrence = 35527 
+  Word = and , occurrence = 32497 
+  Word = to , occurrence = 25383 
+  Word = in , occurrence = 19021 
+  Word = a , occurrence = 18270 
+  Word = he , occurrence = 10478 
+  Word = that , occurrence = 10471 
+  Word = was , occurrence = 9931 
+  Word = is , occurrence = 8646 
+
+
+
+    char = e frequency = 12 
+	char = t frequency = 9 
+	char = a frequency = 7 
+	char = o frequency = 7 
+	char = n frequency = 7 
+	char = i frequency = 7 
+	char = s frequency = 6 
+	char = r frequency = 6 
+	char = h frequency = 5 
+	char = d frequency = 4 
+
+
+Graph Printed
+*/
