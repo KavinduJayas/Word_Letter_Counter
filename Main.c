@@ -23,11 +23,11 @@ typedef struct ___{
 }file_t;
 
 int printUsage(char*);
-int* countLetter(size_t*,double*,unsigned int* ,file_t*);
-void countWord(size_t*,double*,word_t** ,file_t*);
+int* countLetter(size_t*,float*,unsigned int* ,file_t*);
+void countWord(size_t*,float*,word_t** ,file_t*);
 word_t* sortWordArray(word_t**,int,size_t*);
-char_t* sortLetterArray(unsigned int*,int,double*,int*);
-void printGraph(void*,int,size_t*,double*,int);
+char_t* sortLetterArray(unsigned int*,int,float*,int*);
+void printGraph(void*,int,size_t*,float*,int);
 
 
 int main(int argc, char* argv[]){
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
 	int scaled=0,wordMode=1,lengthFlag=1,indicater=1;
 	int length=DEFAULT_LENGTH;
 	size_t count=0;
-	double countAll=0;
+	float countAll=0;
 	file_t* files=NULL;
 	word_t* wordArray=NULL;
 	
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 
-void countWord(size_t* count,double* countAll,word_t** wordArray,file_t* files){
+void countWord(size_t* count,float* countAll,word_t** wordArray,file_t* files){
 	
 	char c,*word=(char*)malloc(MAX_WORD_SIZE);	
 	int position=0,inArray = 0;
@@ -130,7 +130,7 @@ void countWord(size_t* count,double* countAll,word_t** wordArray,file_t* files){
 				word[position]=c;	
 				position++;
 						
-			}else if(c==' ' && position ){		
+			}else if((c==' ' || c=='\n' )&& (position !=0) ){		
 				if(wordArray!=NULL){
 					for(word_t* temp=*wordArray; temp!=NULL;temp=temp->next){
 						if(!(strcmp(temp->word,word))){				        
@@ -162,7 +162,7 @@ void countWord(size_t* count,double* countAll,word_t** wordArray,file_t* files){
 	
 }
 
-int* countLetter(size_t* count,double* countAll,unsigned int* letterArray,file_t* files){
+int* countLetter(size_t* count,float* countAll,unsigned int* letterArray,file_t* files){
 
 	char c;		
 	static int foundOrder[36]={0}; 
@@ -232,7 +232,7 @@ word_t* sortWordArray(word_t** wordArray,int length,size_t* count){
 	return maxArray;
 }
 
-char_t* sortLetterArray(unsigned int* letterArray,int length,double* countAll,int* foundOrder){
+char_t* sortLetterArray(unsigned int* letterArray,int length,float* countAll,int* foundOrder){
 
 	int max=0;
 	
@@ -260,36 +260,36 @@ char_t* sortLetterArray(unsigned int* letterArray,int length,double* countAll,in
 		}
 		maxArray[i].occurrence=letterArray[max];
 		letterArray[max]=0;
-		max=0;
-
-		
+		max=0;		
 	}
 	return maxArray;
 }
 
 
-void printGraph(void* voidMaxArray,int length,size_t* count,double* countAll,int wordMode){
-	double frequency;
+void printGraph(void* maxArray,int length,size_t* count,float* countAll,int wordMode){
+	float frequency;
 	if(*count<length){
 		length=*count;
 	}
 	unsigned long int maxWordLength=1;
 
 	if(wordMode){
-		word_t* maxArray=(word_t*)voidMaxArray;
 		for(int i=0;i<length;i++){
-			if(strlen(maxArray[i].word)>maxWordLength){
-				maxWordLength=strlen(maxArray[i].word);
+			if(strlen((*((word_t*)maxArray+i)).word)>maxWordLength){
+				maxWordLength=strlen((*((word_t*)maxArray+i)).word);
 			}
 		}
-	}else{
-		char_t* maxArray=(char_t*)voidMaxArray;
 	}
+
 	printf("\n");
 	for(int i=0;i<length;i++){
-		frequency=(double)(maxArray[i].occurrence)/(*countAll);
+		if(wordMode){
+			frequency=(float)((*((word_t*)maxArray+i)).occurrence)/(*countAll);
+		}else{
+			frequency=(float)((*((char_t*)maxArray+i)).occurrence)/(*countAll);
+		}
 		
-			/*             ONE WORD            */
+		/*             ONE WORD            */
 
 		
 		for(int j=0;j<(maxWordLength+2);j++){
@@ -302,12 +302,12 @@ void printGraph(void* voidMaxArray,int length,size_t* count,double* countAll,int
 
 		printf("\n");
 		if(wordMode){
-			printf(" %s",maxArray[i].word);
-			for(int j=0;j<(maxWordLength-strlen(maxArray[i].word)+1);j++){
+			printf(" %s",(*((word_t*)maxArray+i)).word);
+			for(int j=0;j<(maxWordLength-strlen((*((word_t*)maxArray+i)).word)+1);j++){
 			printf(" ");
 		}
 		}else{
-			printf(" %c ",maxArray[i].letter);
+			printf(" %c ",(*((char_t*)maxArray+i)).letter);
 		}
 		
 		printf("\u2502");
@@ -334,7 +334,6 @@ void printGraph(void* voidMaxArray,int length,size_t* count,double* countAll,int
 
 	}
 
-
 	/*      DEFAULT LINE        */
 
 	for(int i=0;i<(maxWordLength+2);i++){
@@ -348,40 +347,3 @@ void printGraph(void* voidMaxArray,int length,size_t* count,double* countAll,int
 	printf("\n");
 
 }
-
-/*
-
-WordMode=1 length=10 scaled=0 
-
-files added at 0x55b8057b6690 
-
-count =99007
-
-word insertion Done
-  Word = the , occurrence = 65661 
-  Word = of , occurrence = 35527 
-  Word = and , occurrence = 32497 
-  Word = to , occurrence = 25383 
-  Word = in , occurrence = 19021 
-  Word = a , occurrence = 18270 
-  Word = he , occurrence = 10478 
-  Word = that , occurrence = 10471 
-  Word = was , occurrence = 9931 
-  Word = is , occurrence = 8646 
-
-
-
-    char = e frequency = 12 
-	char = t frequency = 9 
-	char = a frequency = 7 
-	char = o frequency = 7 
-	char = n frequency = 7 
-	char = i frequency = 7 
-	char = s frequency = 6 
-	char = r frequency = 6 
-	char = h frequency = 5 
-	char = d frequency = 4 
-
-
-Graph Printed
-*/
