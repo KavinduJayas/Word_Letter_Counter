@@ -66,30 +66,7 @@ int main(int argc, char* argv[]){
 				wordFlag=1;
 				break;
 			case 'l':
-				if(argv[indicater+1]!=NULL && lengthFlag){
-					/*
-					if(strlen(argv[indicater+1])>2){	
-						printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);				
-						return 0;
-					}else if(strlen(argv[indicater+1])==2){			
-						if(strcmp(argv[indicater+1],"10")){
-						printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);				
-						return 0;
-						}
-						indicater++;
-					}else if(isdigit(argv[indicater+1][0])){						
-							if((argv[indicater+1][0]-'0')>0 && (argv[indicater+1][0]-'0')<10){								
-								length = (long int)(argv[indicater+1][0]-'0');						
-								lengthFlag=0;								
-								indicater++;								
-							}else{
-								printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);				
-								return 0;
-							}
-					}else{
-						printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);				
-						return 0;
-					}*/
+				if(argv[indicater+1]!=NULL && lengthFlag){					
 					for(int i=0;i<strlen(argv[indicater+1]);i++){
 						if(isdigit(argv[indicater+1][i])){
 							length=length*10 + argv[indicater+1][i]-'0';
