@@ -53,13 +53,13 @@ int main(int argc, char* argv[]){
 				break;
 			case 'c':
 				wordMode=0;
-				if(wordFlag){
+				if(wordFlag){//if [-w] is already used
 					printf("[-c] and [-w] cannot use together\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
 					return 0;
 				}
 				break;
 			case 'w':
-				if(!wordMode){
+				if(!wordMode){//if [-c] is already used
 					printf("[-c] and [-w] cannot use together\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
 					return 0;
 				}
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]){
 							length=length*10 + argv[indicater+1][i]-'0';
 							lengthFlag=0;
 							
-						}else{
+						}else{//if the argument is not a number
 							printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);		
 							return 0;
 						}
@@ -134,7 +134,7 @@ void countWord(size_t* count,float* countAll,word_t** wordArray,file_t* files){
 				word[position]=c;	
 				position++;
 						
-			}else if((c==' ' || c=='\n' )&& (position !=0) ){//end of a word	
+			}else if((c==' ' || c=='\n' || c=='\t' )&& (position !=0) ){//end of a word	
 				if(wordArray!=NULL){
 					for(word_t* temp=*wordArray; temp!=NULL;temp=temp->next){
 						if(!(strcmp(temp->word,word))){				        
@@ -253,7 +253,7 @@ word_t* sortWordArray(word_t** wordArray,int length,size_t* count){
 		}
 		free(max);//freeing max occurrence
 
-	}	
+	}
 	return maxArray;
 }
 
@@ -294,8 +294,9 @@ char_t* sortCharArray(unsigned int* letterArray,int length,float* countAll,int* 
 void printGraph(void* maxArray,int length,size_t* count,float* countAll,int wordMode,int scaled){
 	float frequency,printFrequency;
 	float barLength=0;
+	int label=5;
 
-	if(*count<length){
+	if(*count<length){//if requested length is greater than the number of unique chars
 		length=*count;
 	}
 	unsigned long int maxWordLength=1;
@@ -328,41 +329,40 @@ void printGraph(void* maxArray,int length,size_t* count,float* countAll,int word
 			}	
 		}	
 		
-		barLength =(frequency*(SCREEN_WIDTH-8-maxWordLength))-(int)(frequency*(SCREEN_WIDTH-8-maxWordLength));
-		if(barLength>0.5){//rounding off
-			barLength=(int)(frequency*(SCREEN_WIDTH-8-maxWordLength))+1;
-		}else{
-			barLength=(int)(frequency*(SCREEN_WIDTH-8-maxWordLength));
+		if((int)(printFrequency*10) >0 ){//if the frequency is 2 digits
+			label=6;
+		}
+		if(((int)printFrequency)==1){//if the frequency is 3 digits
+			label=7;
 		}
 
-		barLength=(int)(frequency*(SCREEN_WIDTH-8-maxWordLength));
+		barLength=(int)(frequency*(SCREEN_WIDTH-3-label-maxWordLength));
+	
 
 		/*             ONE WORD            */
 		for(int j=0;j<(maxWordLength+2);j++){
 			printf(" ");
 		}
 		printf("\u2502");
-		for(int j=0;j<barLength;j++){
+		for(int j=0;j<barLength;j++){//first line of the bar
 			printf("\u2591");
 		}
 
 
 		printf("\n");
 		if(wordMode){
-			printf(" %s",(*((word_t*)maxArray+i)).word);
-			for(int j=0;j<(maxWordLength-strlen((*((word_t*)maxArray+i)).word)+1);j++){
-			printf(" ");
+			printf(" %s",(*((word_t*)maxArray+i)).word);//printing the word
+			for(int j=0;j<(maxWordLength-strlen((*((word_t*)maxArray+i)).word)+1);j++){//alligning with the longest word
+				printf(" ");
 			}
 		}else{
-			printf(" %c ",(*((char_t*)maxArray+i)).letter);
-		}
-
-		
+			printf(" %c ",(*((char_t*)maxArray+i)).letter);//printing the character
+		}		
 		printf("\u2502");
-		for(int j=0;j<barLength;j++){
+		for(int j=0;j<barLength;j++){//second line of the bar
 			printf("\u2591");
 		}
-		printf("%.2f%%",printFrequency*100);
+		printf("%.2f%%",printFrequency*100);//printing the frequency
 		printf("\n");
 
 
@@ -371,7 +371,7 @@ void printGraph(void* maxArray,int length,size_t* count,float* countAll,int word
 			printf(" ");
 		}
 		printf("\u2502");
-		for(int j=0;j<barLength;j++){
+		for(int j=0;j<barLength;j++){//third line of the bar
 			printf("\u2591");
 		}
 		printf("\n");	
@@ -387,9 +387,9 @@ void printGraph(void* maxArray,int length,size_t* count,float* countAll,int word
 	for(int i=0;i<(maxWordLength+2);i++){
 		printf(" ");
 	}	
-	printf("\u2514");
+	printf("\u2514");//"L" shape
 
-	for(int i=0;i<(SCREEN_WIDTH-maxWordLength-2);i++){
+	for(int i=0;i<(SCREEN_WIDTH-maxWordLength-3);i++){//line at the end
 		printf("\u2500");
 	}
 	printf("\n");
