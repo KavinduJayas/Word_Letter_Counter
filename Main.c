@@ -314,7 +314,6 @@ char_t* sortCharArray(unsigned int* letterArray,int length,float* countAll,int* 
 void printGraph(void* maxArray,int length,size_t* count,float* countAll,int wordMode,int scaled){
 	float frequency,printFrequency;
 	float barLength=0;
-	int label=5;
 
 	if(*count<length){//if requested length is greater than the number of unique chars
 		length=*count;
@@ -348,17 +347,15 @@ void printGraph(void* maxArray,int length,size_t* count,float* countAll,int word
 				frequency /=(float)((*((char_t*)maxArray)).occurrence)/(*countAll);
 			}	
 		}	
+			
+		barLength=(int)(frequency*(SCREEN_WIDTH-8-maxWordLength));
+
 		
-		if((int)(printFrequency*10) >0 ){//if the frequency is 2 digits
-			label=6;
+		if((int)(printFrequency*100) >=10 && (int)(printFrequency*100)<100 && (barLength==(SCREEN_WIDTH-8-maxWordLength)|| !(scaled))){//if the frequency is 2 digits
+			barLength--;
+		}else if((int)(printFrequency*100)==100){//if the frequency is 3 digits
+			barLength-=2;
 		}
-		if(((int)printFrequency)==1){//if the frequency is 3 digits
-			label=7;
-		}
-
-		barLength=(int)(frequency*(SCREEN_WIDTH-3-label-maxWordLength));
-	
-
 		/*             ONE WORD            */
 		for(int j=0;j<(maxWordLength+2);j++){
 			printf(" ");
