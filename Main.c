@@ -115,7 +115,7 @@ int main(int argc, char* argv[]){
 				while(current->next!=NULL){
 					current=current->next;
 				}	
-				current->next=newFile;		
+				current->next=newFile;	//adding the new file to the end of the list	
 			}
 	}
 
