@@ -106,8 +106,17 @@ int main(int argc, char* argv[]){
 				printf("Cannot open one or more given files\n");
 				return 0;
 			}
-			newFile->next=files;
-			files=newFile;			
+			newFile->next=NULL;
+			file_t* current = files;
+			
+			if(current==NULL){
+				files=newFile;
+			}else{	
+				while(current->next!=NULL){
+					current=current->next;
+				}	
+				current->next=newFile;		
+			}
 	}
 
 	if(wordMode){//operating in word mode
