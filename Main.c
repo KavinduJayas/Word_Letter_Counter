@@ -33,7 +33,7 @@ void printGraph(void*,int,size_t*,float*,int,int);//prints the graph
 int main(int argc, char* argv[]){
 	unsigned int letterArray[36]={0};
 	int *foundOrder=NULL;
-	int scaled=0,wordMode=1,lengthFlag=1,indicater=1,wordFlag=0;
+	int scaled=0,wordMode=1,lengthFlag=1,indicater=1,wordFlag=0,filesGiven=0;
 	int length=0;
 	size_t count=0;
 	float countAll=0;
@@ -41,67 +41,57 @@ int main(int argc, char* argv[]){
 	word_t* wordArray=NULL;
 	
 
-    for(; indicater < argc && argv[indicater][0] == '-'; indicater++) {//handing arguments
-        switch (argv[indicater][1]) {
-			case '-': 
-				if(!strcmp(argv[indicater],"--scaled")){
-					scaled=1;
-				}else{
+    for(; indicater < argc ; indicater++) {//handing arguments
+		if(argv[indicater][0] == '-'){
+			switch (argv[indicater][1]) {
+				case '-': 
+					if(!strcmp(argv[indicater],"--scaled")){
+						scaled=1;
+					}else{
+						printf("Invalid option [%s]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[indicater],argv[0]);
+						return 0;
+					}
+					break;
+				case 'c':
+					wordMode=0;
+					if(wordFlag){//if [-w] is already used
+						printf("[-c] and [-w] cannot use together\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
+						return 0;
+					}
+					break;
+				case 'w':
+					if(!wordMode){//if [-c] is already used
+						printf("[-c] and [-w] cannot use together\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
+						return 0;
+					}
+					wordFlag=1;
+					break;
+				case 'l':
+					if(argv[indicater+1]!=NULL && lengthFlag){				
+						for(int i=0;i<strlen(argv[indicater+1]);i++){
+							if(isdigit(argv[indicater+1][i])){//converting the string to an integer
+								length=length*10 + argv[indicater+1][i]-'0';
+								lengthFlag=0;
+								
+							}else{//if the argument is not a number
+								printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);		
+								return 0;
+							}
+						}
+						indicater++;
+					}else{
+						printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);				
+						return 0;
+					}
+
+					break;
+				default:
 					printf("Invalid option [%s]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[indicater],argv[0]);
 					return 0;
-				}
-				break;
-			case 'c':
-				wordMode=0;
-				if(wordFlag){//if [-w] is already used
-					printf("[-c] and [-w] cannot use together\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
-					return 0;
-				}
-				break;
-			case 'w':
-				if(!wordMode){//if [-c] is already used
-					printf("[-c] and [-w] cannot use together\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
-					return 0;
-				}
-				wordFlag=1;
-				break;
-			case 'l':
-				if(argv[indicater+1]!=NULL && lengthFlag){				
-					for(int i=0;i<strlen(argv[indicater+1]);i++){
-						if(isdigit(argv[indicater+1][i])){//converting the string to an integer
-							length=length*10 + argv[indicater+1][i]-'0';
-							lengthFlag=0;
-							
-						}else{//if the argument is not a number
-							printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);		
-							return 0;
-						}
-    				}
-					indicater++;
-				}else{
-					printf("Invalid options for [-l]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);				
-					return 0;
-				}
-
-				break;
-			default:
-				printf("Invalid option [%s]\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[indicater],argv[0]);
-				return 0;
-        }   
-    }   
-	
-	if(argv[indicater]==NULL){//if no files given 
-		printf("Cannot open one or more given files\n");
-		return 0;
-	}
-
-	if(lengthFlag){//if the length is not changed
-		length=DEFAULT_LENGTH;
-	}
-
-	for(int i=indicater;argv[i]!=NULL;i++){//openning pointers to the files
+			}
+		}else{//argument is a file
 			file_t* newFile=(file_t*)malloc(sizeof(file_t));
-			newFile->filePointer=fopen(argv[i],"r");
+			newFile->filePointer=fopen(argv[indicater],"r");
 			if(newFile->filePointer==NULL){//if the file couldn't be opened
 				printf("Cannot open one or more given files\n");
 				return 0;
@@ -115,16 +105,37 @@ int main(int argc, char* argv[]){
 				while(current->next!=NULL){
 					current=current->next;
 				}	
-				current->next=newFile;	//adding the new file to the end of the list	
+				current->next=newFile;//adding the new file to the end of the list	
 			}
+			filesGiven=1;
+		} 
+    }   
+	
+	if(!(filesGiven)){//if no files given 
+		printf("No input files were given\nusage: %s [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n",argv[0]);
+		return 0;
 	}
 
+	if(lengthFlag){//if the length is not changed
+		length=DEFAULT_LENGTH;
+	}
+
+
+
 	if(wordMode){//operating in word mode
-		countWord(&count,&countAll,&wordArray,files);		
+		countWord(&count,&countAll,&wordArray,files);	
+		if(countAll==0){
+			printf("No data to process\n");
+			return 0;
+		}	
 		printGraph(sortWordArray((void*)&wordArray,length,&count),length,&count,&countAll,wordMode,scaled);	
 	
 	}else{		//operating in character mode
-		foundOrder=countLetter(&count,&countAll,letterArray,files);	
+		foundOrder=countLetter(&count,&countAll,letterArray,files);
+		if(countAll==0){
+			printf("No data to process\n");
+			return 0;
+		}	
 		printGraph((void*)sortCharArray(letterArray,length,&countAll,foundOrder),length,&count,&countAll,wordMode,scaled);		
 	}
 	return 0;
